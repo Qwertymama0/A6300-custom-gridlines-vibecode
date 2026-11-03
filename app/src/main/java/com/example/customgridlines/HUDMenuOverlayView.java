@@ -98,7 +98,7 @@ public class HUDMenuOverlayView extends View implements OverlayStateManager.OnSt
         // Header Title
         boldTextPaint.setColor(0xFFFFFFFF);
         boldTextPaint.setTextSize(18f);
-        canvas.drawText("SONY A6300 CUSTOM GRIDLINES", panelX + 20f, panelY + 28f, boldTextPaint);
+        canvas.drawText("GRIDLAB | SONY A6300", panelX + 20f, panelY + 28f, boldTextPaint);
 
         // Quick Settings Info
         subtitlePaint.setColor(0xFF58A6FF);

@@ -30,9 +30,12 @@ jobs:
       - name: Build Debug APK
         run: ./gradlew assembleDebug --stacktrace
 
+      - name: Rename APK to GridLab.apk
+        run: cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/GridLab.apk
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: GridLab
+          path: app/build/outputs/apk/debug/GridLab.apk
           if-no-files-found: error
