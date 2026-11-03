@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.customgridlines"
+    android:versionCode="1"
+    android:versionName="1.0">
+
+    <!-- Vereist voor Android 2.3.7 op Sony camera's -->
+    <uses-sdk android:minSdkVersion="10" android:targetSdkVersion="10" />
+
+    <uses-permission android:permission="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" />
+    <uses-feature android:name="android.hardware.camera.autofocus" />
+
+    <application
+        android:icon="@drawable/icon"
+        android:label="Custom Gridlines"
+        android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
+        
+        <activity
+            android:name=".MainActivity"
+            android:screenOrientation="landscape"
+            android:configChanges="keyboardHidden|orientation">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <!-- OpenMemories specifieke category -->
+                <category android:name="com.sony.scalar.sysmanager.cb.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
