@@ -1,0 +1,8 @@
+{
+  "name": "Custom Gridlines",
+  "description": "Camera overlay with custom aspect ratio and composition gridlines for photography.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
