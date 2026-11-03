@@ -13,19 +13,28 @@ import java.util.Set;
 public class OverlayStateManager {
 
     private static final String PREFS_NAME = "custom_gridlines_prefs";
-    private static final String KEY_ACTIVE_PREFIX = "active_";
-    private static final String KEY_FAV_PREFIX = "fav_";
-    private static final String KEY_COLOR_PREFIX = "color_";
+    private static final String KEY_ACTIVE_PREFIX = "a_";
+    private static final String KEY_FAV_PREFIX = "f_";
+    private static final String KEY_COLOR_PREFIX = "c_";
+    private static final String KEY_STROKE_WEIGHT = "sw";
+    private static final String KEY_SPIRAL_CORNER = "sc";
 
     public interface OnStateChangeListener {
         void onStateChanged();
     }
+
+    public static final float[] STROKE_WEIGHTS = new float[] { 1.5f, 2.5f, 4.0f };
+    public static final String[] STROKE_WEIGHT_NAMES = new String[] { "Fine (1.5px)", "Standard (2.5px)", "Bold (4.0px)" };
+    public static final String[] SPIRAL_CORNER_NAMES = new String[] { "Top-Left", "Top-Right", "Bottom-Right", "Bottom-Left" };
 
     private final SharedPreferences prefs;
     private final Set<OverlayType> activeOverlays = EnumSet.noneOf(OverlayType.class);
     private final Set<OverlayType> favoriteOverlays = EnumSet.noneOf(OverlayType.class);
     private final Map<OverlayType, Integer> overlayColors = new EnumMap<OverlayType, Integer>(OverlayType.class);
     private final List<OnStateChangeListener> listeners = new ArrayList<OnStateChangeListener>();
+
+    private int strokeWeightIndex = 1;
+    private int spiralCornerIndex = 0;
 
     public OverlayStateManager(Context context) {
         prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
@@ -40,7 +49,6 @@ public class OverlayStateManager {
             boolean activeDefault = false;
             boolean favDefault = false;
 
-            // Default initial setup if first launch:
             if (!hasSavedState) {
                 if (type == OverlayType.GRID_RULE_OF_THIRDS || type == OverlayType.RATIO_16_9) {
                     activeDefault = true;
@@ -55,19 +63,19 @@ public class OverlayStateManager {
                 }
             }
 
-            boolean isActive = prefs.getBoolean(KEY_ACTIVE_PREFIX + type.id, activeDefault);
-            if (isActive) {
+            if (prefs.getBoolean(KEY_ACTIVE_PREFIX + type.id, activeDefault)) {
                 activeOverlays.add(type);
             }
-
-            boolean isFav = prefs.getBoolean(KEY_FAV_PREFIX + type.id, favDefault);
-            if (isFav) {
+            if (prefs.getBoolean(KEY_FAV_PREFIX + type.id, favDefault)) {
                 favoriteOverlays.add(type);
             }
 
             int colorIdx = prefs.getInt(KEY_COLOR_PREFIX + type.id, type.defaultColorIndex);
             overlayColors.put(type, colorIdx);
         }
+
+        strokeWeightIndex = prefs.getInt(KEY_STROKE_WEIGHT, 1);
+        spiralCornerIndex = prefs.getInt(KEY_SPIRAL_CORNER, 0);
     }
 
     public synchronized boolean isActive(OverlayType type) {
@@ -92,26 +100,20 @@ public class OverlayStateManager {
         return favoriteOverlays.contains(type);
     }
 
-    public synchronized void setFavorite(OverlayType type, boolean favorite) {
-        if (favorite) {
+    public synchronized void toggleFavorite(OverlayType type) {
+        boolean fav = !isFavorite(type);
+        if (fav) {
             favoriteOverlays.add(type);
         } else {
             favoriteOverlays.remove(type);
         }
-        prefs.edit().putBoolean(KEY_FAV_PREFIX + type.id, favorite).commit();
+        prefs.edit().putBoolean(KEY_FAV_PREFIX + type.id, fav).commit();
         notifyChanged();
-    }
-
-    public synchronized void toggleFavorite(OverlayType type) {
-        setFavorite(type, !isFavorite(type));
     }
 
     public synchronized int getColorIndex(OverlayType type) {
         Integer idx = overlayColors.get(type);
-        if (idx == null) {
-            return type.defaultColorIndex;
-        }
-        return idx;
+        return idx == null ? type.defaultColorIndex : idx;
     }
 
     public synchronized int getResolvedColor(OverlayType type) {
@@ -122,12 +124,6 @@ public class OverlayStateManager {
         int nextIdx = ColorPalette.getNextColorIndex(getColorIndex(type));
         overlayColors.put(type, nextIdx);
         prefs.edit().putInt(KEY_COLOR_PREFIX + type.id, nextIdx).commit();
-        notifyChanged();
-    }
-
-    public synchronized void setColorIndex(OverlayType type, int index) {
-        overlayColors.put(type, index);
-        prefs.edit().putInt(KEY_COLOR_PREFIX + type.id, index).commit();
         notifyChanged();
     }
 
@@ -157,6 +153,37 @@ public class OverlayStateManager {
             }
         }
         return result;
+    }
+
+    public synchronized float getStrokeWeightPx() {
+        if (strokeWeightIndex < 0 || strokeWeightIndex >= STROKE_WEIGHTS.length) {
+            return STROKE_WEIGHTS[1];
+        }
+        return STROKE_WEIGHTS[strokeWeightIndex];
+    }
+
+    public synchronized String getStrokeWeightName() {
+        return STROKE_WEIGHT_NAMES[strokeWeightIndex];
+    }
+
+    public synchronized void cycleStrokeWeight() {
+        strokeWeightIndex = (strokeWeightIndex + 1) % STROKE_WEIGHTS.length;
+        prefs.edit().putInt(KEY_STROKE_WEIGHT, strokeWeightIndex).commit();
+        notifyChanged();
+    }
+
+    public synchronized int getSpiralCornerIndex() {
+        return spiralCornerIndex;
+    }
+
+    public synchronized String getSpiralCornerName() {
+        return SPIRAL_CORNER_NAMES[spiralCornerIndex];
+    }
+
+    public synchronized void cycleSpiralCorner() {
+        spiralCornerIndex = (spiralCornerIndex + 1) % SPIRAL_CORNER_NAMES.length;
+        prefs.edit().putInt(KEY_SPIRAL_CORNER, spiralCornerIndex).commit();
+        notifyChanged();
     }
 
     public void addListener(OnStateChangeListener listener) {

@@ -2,19 +2,20 @@ package com.example.customgridlines;
 
 public enum OverlayType {
 
-    // === COMPOSITION GRIDS ===
-    GRID_RULE_OF_THIRDS("grid_rule_of_thirds", Category.GRIDS, "Rule of Thirds", "3x3 raster (33.3% / 66.6%)", false, 0f, 0), // White
-    GRID_GOLDEN_RATIO("grid_golden_ratio", Category.GRIDS, "Golden Ratio (Phi)", "Phi snijlijnen (1 : 1.618)", false, 0f, 1), // Yellow
-    GRID_GOLDEN_SPIRAL("grid_golden_spiral", Category.GRIDS, "Golden Spiral", "Fibonacci spiraalcurve", false, 0f, 4), // Cyan
-    GRID_PHI_GRID("grid_phi_grid", Category.GRIDS, "Phi Grid", "38.2% | 23.6% | 38.2% raster", false, 0f, 8), // Gold
-    GRID_DYNAMIC_SYMMETRY("grid_dynamic_symmetry", Category.GRIDS, "Dynamic Symmetry", "Harmonische armature & reciprocals", false, 0f, 6), // Magenta
-    GRID_DIAGONAL_METHOD("grid_diagonal_method", Category.GRIDS, "Diagonal Method", "45° hoekdiagonalen", false, 0f, 5), // Orange
-    GRID_BAROQUE_DIAGONAL("grid_baroque_diagonal", Category.GRIDS, "Baroque Diagonal", "Linksonder naar rechtsboven", false, 0f, 10), // Sky Blue
-    GRID_SINISTER_DIAGONAL("grid_sinister_diagonal", Category.GRIDS, "Sinister Diagonal", "Linksboven naar rechtsonder", false, 0f, 2), // Red
-    GRID_TRIANGULAR("grid_triangular", Category.GRIDS, "Triangular", "Driehoekscompositie", false, 0f, 7), // Lime
-    GRID_CENTRAL("grid_central", Category.GRIDS, "Central Crosshair", "Middenkruis & focuscirkels", false, 0f, 3), // Green
-    GRID_RADIAL("grid_radial", Category.GRIDS, "Radial (Vanishing)", "Verdwijnpunt straallijnen", false, 0f, 9), // Violet
-    GRID_2_COLUMN("grid_2_column", Category.GRIDS, "2-Column (50/50)", "Centrale verticale scheiding", false, 0f, 11), // Silver
+    // === COMPOSITIE GRIDS ===
+    GRID_RULE_OF_THIRDS("grid_rule_of_thirds", Category.GRIDS, "Rule of Thirds", "3x3 raster (33.3% / 66.6%)", false, 0f, 0),
+    GRID_GOLDEN_RATIO("grid_golden_ratio", Category.GRIDS, "Golden Ratio (Phi)", "Phi snijlijnen (1 : 1.618)", false, 0f, 1),
+    GRID_GOLDEN_SPIRAL("grid_golden_spiral", Category.GRIDS, "Golden Spiral", "Fibonacci spiraalcurve", false, 0f, 4),
+    GRID_PHI_GRID("grid_phi_grid", Category.GRIDS, "Phi Grid", "38.2% | 23.6% | 38.2% raster", false, 0f, 8),
+    GRID_DYNAMIC_SYMMETRY("grid_dynamic_symmetry", Category.GRIDS, "Dynamic Symmetry", "Harmonische armature & reciprocals", false, 0f, 6),
+    GRID_DIAGONAL_METHOD("grid_diagonal_method", Category.GRIDS, "Diagonal Method", "45° hoekdiagonalen", false, 0f, 5),
+    GRID_BAROQUE_DIAGONAL("grid_baroque_diagonal", Category.GRIDS, "Baroque Diagonal", "Linksonder naar rechtsboven", false, 0f, 10),
+    GRID_SINISTER_DIAGONAL("grid_sinister_diagonal", Category.GRIDS, "Sinister Diagonal", "Linksboven naar rechtsonder", false, 0f, 2),
+    GRID_TRIANGULAR("grid_triangular", Category.GRIDS, "Triangular", "Driehoekscompositie", false, 0f, 7),
+    GRID_CENTRAL("grid_central", Category.GRIDS, "Central Crosshair", "Middenkruis & focuscirkels", false, 0f, 3),
+    GRID_HORIZON_LEVEL("grid_horizon_level", Category.GRIDS, "Virtual Horizon Level", "Elektronische horizon waterpas", false, 0f, 3),
+    GRID_RADIAL("grid_radial", Category.GRIDS, "Radial (Vanishing)", "Verdwijnpunt straallijnen", false, 0f, 9),
+    GRID_2_COLUMN("grid_2_column", Category.GRIDS, "2-Column (50/50)", "Centrale verticale scheiding", false, 0f, 11),
     GRID_3_COLUMN("grid_3_column", Category.GRIDS, "3-Column", "Driekoloms verticaal raster", false, 0f, 11),
     GRID_4_COLUMN("grid_4_column", Category.GRIDS, "4-Column", "Vierkoloms raster (25% stappen)", false, 0f, 11),
     GRID_RABATMENT("grid_rabatment", Category.GRIDS, "Rabatment", "Vierkanten vanuit korte zijde", false, 0f, 8),

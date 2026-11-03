@@ -21,7 +21,6 @@ public class SonyCameraAdapter {
         // 1. Try Sony OpenMemories CameraEx via reflection first
         try {
             Class<?> cameraExClass = Class.forName("com.sony.scalar.hardware.CameraEx");
-            // CameraEx.open(int id, CameraEx.ErrorCallback cb)
             Method[] methods = cameraExClass.getMethods();
             Method openMethod = null;
             for (Method m : methods) {
@@ -95,14 +94,5 @@ public class SonyCameraAdapter {
 
     public boolean isSonyHardware() {
         return isSonyHardware;
-    }
-
-    public void triggerAutofocus() {
-        if (standardCamera != null) {
-            try {
-                standardCamera.autoFocus(null);
-            } catch (Throwable ignored) {
-            }
-        }
     }
 }
