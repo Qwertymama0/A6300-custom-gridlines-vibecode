@@ -19,6 +19,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private HUDMenuOverlayView hudOverlay;
     private OverlayStateManager stateManager;
 
+    private long lastBackPressTime = 0;
+    private static final long BACK_PRESS_INTERVAL = 2500; // 2.5 seconds
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -90,6 +93,33 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         // Native shooting pass-through: NEVER intercept focus or shutter keys
         if (keyCode == KeyEvent.KEYCODE_FOCUS || keyCode == KeyEvent.KEYCODE_CAMERA) {
             return super.onKeyDown(keyCode, event);
+        }
+
+        // Dedicated BACK key handling for clear, safe app exit
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            long now = System.currentTimeMillis();
+
+            // 1. If HUD menu is currently open, close menu and prompt to exit
+            if (hudOverlay != null && hudOverlay.isMenuVisible()) {
+                hudOverlay.setMenuVisible(false);
+                lastBackPressTime = now;
+                if (gridOverlay != null) {
+                    gridOverlay.showExitPrompt(BACK_PRESS_INTERVAL);
+                }
+                return true;
+            }
+
+            // 2. In live view mode, double-press BACK within 2.5s cleanly exits app
+            if (now - lastBackPressTime < BACK_PRESS_INTERVAL) {
+                finish();
+                return true;
+            } else {
+                lastBackPressTime = now;
+                if (gridOverlay != null) {
+                    gridOverlay.showExitPrompt(BACK_PRESS_INTERVAL);
+                }
+                return true;
+            }
         }
 
         // Delegate navigation and toggling strictly to HUD menu

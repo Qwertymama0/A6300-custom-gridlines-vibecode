@@ -245,33 +245,26 @@ public class HUDMenuOverlayView extends View implements OverlayStateManager.OnSt
         canvas.drawLine(x, y - 6f, x + w, y - 6f, borderPaint);
 
         textPaint.setColor(0xFF58A6FF);
-        textPaint.setTextSize(11f);
-        textPaint.setFakeBoldText(true);
         canvas.drawText("[ENTER]", x + 16f, y + 14f, textPaint);
-
         subtitlePaint.setColor(0xFF8B949E);
-        subtitlePaint.setTextSize(11f);
         canvas.drawText("Toggle  ", x + 62f, y + 14f, subtitlePaint);
 
         textPaint.setColor(0xFF58A6FF);
-        canvas.drawText("[C2/DIAL]", x + 115f, y + 14f, textPaint);
-        canvas.drawText("Kleur  ", x + 172f, y + 14f, subtitlePaint);
+        canvas.drawText("[C2]", x + 112f, y + 14f, textPaint);
+        canvas.drawText("Kleur  ", x + 138f, y + 14f, subtitlePaint);
 
         textPaint.setColor(0xFF58A6FF);
-        canvas.drawText("[C1]", x + 218f, y + 14f, textPaint);
-        canvas.drawText("Favoriet  ", x + 244f, y + 14f, subtitlePaint);
+        canvas.drawText("[C1]", x + 180f, y + 14f, textPaint);
+        canvas.drawText("Favoriet  ", x + 206f, y + 14f, subtitlePaint);
 
         textPaint.setColor(0xFF58A6FF);
-        canvas.drawText("[3]", x + 300f, y + 14f, textPaint);
-        canvas.drawText("Dikte  ", x + 316f, y + 14f, subtitlePaint);
+        canvas.drawText("[MENU]", x + 262f, y + 14f, textPaint);
+        canvas.drawText("Verberg  ", x + 305f, y + 14f, subtitlePaint);
 
-        textPaint.setColor(0xFF58A6FF);
-        canvas.drawText("[TRASH]", x + 360f, y + 14f, textPaint);
-        canvas.drawText("Wissen  ", x + 412f, y + 14f, subtitlePaint);
-
-        textPaint.setColor(0xFF58A6FF);
-        canvas.drawText("[MENU]", x + 465f, y + 14f, textPaint);
-        canvas.drawText("Verberg", x + 512f, y + 14f, subtitlePaint);
+        textPaint.setColor(0xFFF85149); // Red highlight for exit
+        canvas.drawText("[BACK]", x + 360f, y + 14f, textPaint);
+        subtitlePaint.setColor(0xFFE6EDF3);
+        canvas.drawText("Sluit Menu / Afsluiten", x + 402f, y + 14f, subtitlePaint);
     }
 
     // === 100% SONY A6300 HARDWARE KEY DISPATCH ===
@@ -360,9 +353,6 @@ public class HUDMenuOverlayView extends View implements OverlayStateManager.OnSt
                 invalidate();
                 return true;
 
-            case KeyEvent.KEYCODE_BACK:
-                setMenuVisible(false);
-                return true;
         }
 
         return false;

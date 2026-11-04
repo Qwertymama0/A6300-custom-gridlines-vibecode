@@ -20,6 +20,13 @@ public class GridOverlayView extends View implements OverlayStateManager.OnState
     private final Path path = new Path();
     private final RectF arcRect = new RectF();
 
+    // Exit prompt overlay
+    private long exitPromptUntil = 0;
+    private final Paint exitBannerPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint exitTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint exitBorderPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final RectF exitBannerRect = new RectF();
+
     private float displayScale = 1.0f;
 
     public GridOverlayView(Context context) {
@@ -29,6 +36,15 @@ public class GridOverlayView extends View implements OverlayStateManager.OnState
         maskPaint.setStyle(Paint.Style.FILL);
         maskPaint.setColor(0x8A000000); // 54% dark letterbox mask
         fillPaint.setStyle(Paint.Style.FILL);
+
+        exitBannerPaint.setStyle(Paint.Style.FILL);
+        exitBannerPaint.setColor(0xEE161B22);
+        exitBorderPaint.setStyle(Paint.Style.STROKE);
+        exitBorderPaint.setStrokeWidth(2f);
+        exitBorderPaint.setColor(0xFFF85149); // Warning red accent border
+        exitTextPaint.setColor(0xFFFFFFFF);
+        exitTextPaint.setFakeBoldText(true);
+        exitTextPaint.setTextSize(17f);
     }
 
     public void setStateManager(OverlayStateManager manager) {
@@ -40,6 +56,11 @@ public class GridOverlayView extends View implements OverlayStateManager.OnState
             this.stateManager.addListener(this);
         }
         invalidate();
+    }
+
+    public void showExitPrompt(long durationMs) {
+        this.exitPromptUntil = System.currentTimeMillis() + durationMs;
+        postInvalidate();
     }
 
     @Override
@@ -81,6 +102,31 @@ public class GridOverlayView extends View implements OverlayStateManager.OnState
                 drawCompositionGrid(canvas, width, height, type, stateManager.getResolvedColor(type));
             }
         }
+
+        // 3. Draw Exit Confirmation Banner if active
+        if (System.currentTimeMillis() < exitPromptUntil) {
+            drawExitPromptBanner(canvas, width, height);
+            postInvalidateDelayed(100);
+        }
+    }
+
+    private void drawExitPromptBanner(Canvas canvas, int width, int height) {
+        String msg = "✕ Druk nogmaals op [BACK] om GridLab af te sluiten";
+        exitTextPaint.setTextSize(16f * displayScale);
+        float tw = exitTextPaint.measureText(msg);
+
+        float padH = 24f * displayScale;
+        float padV = 14f * displayScale;
+        float bannerW = tw + (padH * 2f);
+        float bannerH = 46f * displayScale;
+
+        float cx = width / 2f;
+        float cy = height * 0.78f; // Near bottom-center so view stays visible
+        exitBannerRect.set(cx - bannerW / 2f, cy - bannerH / 2f, cx + bannerW / 2f, cy + bannerH / 2f);
+
+        canvas.drawRoundRect(exitBannerRect, 8f, 8f, exitBannerPaint);
+        canvas.drawRoundRect(exitBannerRect, 8f, 8f, exitBorderPaint);
+        canvas.drawText(msg, cx - tw / 2f, cy + 6f * displayScale, exitTextPaint);
     }
 
     private void drawAspectRatio(Canvas canvas, int width, int height, float targetRatio, int color) {
