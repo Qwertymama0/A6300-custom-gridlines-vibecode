@@ -1,6 +1,6 @@
 {
-  "summary": "Updated agile specification adding Favorite/Star system with dedicated Favorites tab, individual per-overlay color selection with an expanded high-visibility palette (White, Yellow, Red, Green, Cyan, Orange, Magenta, Lime, Gold, Violet, Sky Blue, Silver, Black), and clear [✓] checkbox toggling for the Sony A6300 (Android 2.3.7).",
-  "updatedAt": "2026-11-03T13:48:49.199988063Z",
+  "summary": "Documentation of hardware shutter/autofocus integration and D-pad column-based navigation for GridLab on Sony A6300 (OpenMemories / Android 2.3.7).",
+  "updatedAt": "2026-11-04T10:38:48.087947265Z",
   "requestFeedback": true,
   "userFacing": true
 }

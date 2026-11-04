@@ -11,9 +11,20 @@ import java.util.List;
 
 public class HUDMenuOverlayView extends View implements OverlayStateManager.OnStateChangeListener {
 
+    public enum FocusArea {
+        TABS,
+        ITEMS
+    }
+
+    public static final int COL_CHECKBOX = 0;
+    public static final int COL_COLOR = 1;
+    public static final int COL_STAR = 2;
+
     private final OverlayStateManager stateManager;
     private boolean isVisible = true;
 
+    private FocusArea focusArea = FocusArea.ITEMS;
+    private int focusColumn = COL_CHECKBOX;
     private OverlayType.Category currentCategory = OverlayType.Category.FAVORITES;
     private int selectedRowIndex = 0;
     private int scrollOffset = 0;
@@ -30,6 +41,7 @@ public class HUDMenuOverlayView extends View implements OverlayStateManager.OnSt
     private final RectF tabRect = new RectF();
     private final RectF boxRect = new RectF();
     private final RectF pillRect = new RectF();
+    private final RectF starBox = new RectF();
 
     public HUDMenuOverlayView(Context context, OverlayStateManager stateManager) {
         super(context);
@@ -82,8 +94,8 @@ public class HUDMenuOverlayView extends View implements OverlayStateManager.OnSt
         int height = getHeight();
         if (width <= 0 || height <= 0) return;
 
-        float panelW = Math.min(width * 0.92f, 740f);
-        float panelH = Math.min(height * 0.90f, 450f);
+        float panelW = Math.min(width * 0.94f, 750f);
+        float panelH = Math.min(height * 0.92f, 455f);
         float panelX = (width - panelW) / 2f;
         float panelY = (height - panelH) / 2f;
         boundsRect.set(panelX, panelY, panelX + panelW, panelY + panelH);
@@ -97,29 +109,29 @@ public class HUDMenuOverlayView extends View implements OverlayStateManager.OnSt
 
         // Header Title
         boldTextPaint.setColor(0xFFFFFFFF);
-        boldTextPaint.setTextSize(18f);
-        canvas.drawText("GRIDLAB | SONY A6300", panelX + 20f, panelY + 28f, boldTextPaint);
+        boldTextPaint.setTextSize(17f);
+        canvas.drawText("GRIDLAB | SONY A6300", panelX + 20f, panelY + 26f, boldTextPaint);
 
         // Quick Settings Info
         subtitlePaint.setColor(0xFF58A6FF);
         subtitlePaint.setTextSize(12f);
         String info = "Dikte: " + stateManager.getStrokeWeightName() + " | Spiraal: " + stateManager.getSpiralCornerName();
-        canvas.drawText(info, panelX + panelW - 270f, panelY + 28f, subtitlePaint);
+        canvas.drawText(info, panelX + panelW - 270f, panelY + 26f, subtitlePaint);
 
         // Category Tabs
-        drawCategoryTabs(canvas, panelX, panelY + 44f, panelW);
+        drawCategoryTabs(canvas, panelX, panelY + 38f, panelW);
 
         // Item List
-        drawItemList(canvas, panelX, panelY + 86f, panelW, panelH - 122f);
+        drawItemList(canvas, panelX, panelY + 76f, panelW, panelH - 128f);
 
         // Footer Navigation Guide
-        drawFooter(canvas, panelX, panelY + panelH - 28f, panelW);
+        drawFooter(canvas, panelX, panelY + panelH - 38f, panelW);
     }
 
     private void drawCategoryTabs(Canvas canvas, float x, float y, float w) {
         OverlayType.Category[] categories = OverlayType.Category.values();
         float tabW = (w - 24f) / categories.length;
-        float tabH = 32f;
+        float tabH = 30f;
 
         for (int i = 0; i < categories.length; i++) {
             OverlayType.Category cat = categories[i];
@@ -127,16 +139,28 @@ public class HUDMenuOverlayView extends View implements OverlayStateManager.OnSt
             tabRect.set(tx, y, tx + tabW - 4f, y + tabH);
 
             boolean isCurrent = (cat == currentCategory);
+            boolean isTabFocused = (focusArea == FocusArea.TABS && isCurrent);
+
             cardPaint.setColor(isCurrent ? 0xFF1F6FEB : 0xFF21262D);
             canvas.drawRoundRect(tabRect, 6f, 6f, cardPaint);
+
+            if (isTabFocused) {
+                borderPaint.setColor(0xFFFFD700); // Bright Gold focus outline
+                borderPaint.setStrokeWidth(2.5f);
+                canvas.drawRoundRect(tabRect, 6f, 6f, borderPaint);
+            } else if (isCurrent) {
+                borderPaint.setColor(0xFF58A6FF);
+                borderPaint.setStrokeWidth(1.2f);
+                canvas.drawRoundRect(tabRect, 6f, 6f, borderPaint);
+            }
 
             textPaint.setColor(isCurrent ? 0xFFFFFFFF : 0xFFC9D1D9);
             textPaint.setTextSize(12f);
             textPaint.setFakeBoldText(isCurrent);
 
-            String title = cat.title;
+            String title = isTabFocused ? ("◀ " + cat.title + " ▶") : cat.title;
             float tw = textPaint.measureText(title);
-            canvas.drawText(title, tx + (tabW - 4f - tw) / 2f, y + 21f, textPaint);
+            canvas.drawText(title, tx + (tabW - 4f - tw) / 2f, y + 20f, textPaint);
         }
     }
 
@@ -144,12 +168,19 @@ public class HUDMenuOverlayView extends View implements OverlayStateManager.OnSt
         List<OverlayType> items = stateManager.getItemsForCategory(currentCategory);
 
         if (items.isEmpty()) {
-            textPaint.setColor(0xFF8B949E);
+            if (focusArea == FocusArea.ITEMS) {
+                focusArea = FocusArea.TABS;
+            }
+            textPaint.setColor(0xFFC9D1D9);
             textPaint.setTextSize(14f);
-            String emptyMsg = currentCategory == OverlayType.Category.FAVORITES
-                ? "Geen favorieten. Druk op [C1] om rasters als favoriet te markeren."
+            String emptyMsg = (currentCategory == OverlayType.Category.FAVORITES)
+                ? "Geen favorieten opgeslagen. Druk op [C1] of navigeer naar [★] om rasters toe te voegen!"
                 : "Geen items in deze categorie.";
             canvas.drawText(emptyMsg, x + 30f, y + 40f, textPaint);
+
+            subtitlePaint.setColor(0xFF58A6FF);
+            subtitlePaint.setTextSize(12f);
+            canvas.drawText("Gebruik [◀ / ▶] of het bovenste instelwiel om een andere categorie te openen.", x + 30f, y + 66f, subtitlePaint);
             return;
         }
 
@@ -157,7 +188,7 @@ public class HUDMenuOverlayView extends View implements OverlayStateManager.OnSt
             selectedRowIndex = Math.max(0, items.size() - 1);
         }
 
-        float rowH = 44f;
+        float rowH = 43f;
         int visibleRows = (int) (h / rowH);
 
         if (selectedRowIndex < scrollOffset) {
@@ -173,103 +204,213 @@ public class HUDMenuOverlayView extends View implements OverlayStateManager.OnSt
             float rowY = y + ((i - scrollOffset) * rowH);
             itemRect.set(x + 12f, rowY, x + w - 12f, rowY + rowH - 4f);
 
-            boolean isFocused = (i == selectedRowIndex);
+            boolean isRowFocused = (focusArea == FocusArea.ITEMS && i == selectedRowIndex);
             boolean isActive = stateManager.isActive(type);
             boolean isFav = stateManager.isFavorite(type);
             int resolvedColor = stateManager.getResolvedColor(type);
             String colorName = ColorPalette.getColorName(stateManager.getColorIndex(type));
 
-            cardPaint.setColor(isFocused ? 0xFF21262D : 0xFF161B22);
+            cardPaint.setColor(isRowFocused ? 0xFF21262D : 0xFF161B22);
             canvas.drawRoundRect(itemRect, 6f, 6f, cardPaint);
 
-            if (isFocused) {
+            if (isRowFocused) {
                 borderPaint.setColor(0xFF388BFD);
-                borderPaint.setStrokeWidth(1.5f);
+                borderPaint.setStrokeWidth(1.2f);
                 canvas.drawRoundRect(itemRect, 6f, 6f, borderPaint);
-
-                textPaint.setColor(0xFF58A6FF);
-                textPaint.setTextSize(15f);
-                canvas.drawText("▸", x + 18f, rowY + 26f, textPaint);
             }
 
-            // Checkbox [✓] or [ ]
-            boxRect.set(x + 36f, rowY + 10f, x + 58f, rowY + 32f);
+            // --- COLUMN 0: Checkbox [✓] or [ ] & Titles ---
+            boxRect.set(x + 36f, rowY + 9f, x + 58f, rowY + 31f);
             cardPaint.setColor(isActive ? 0xFF1F6FEB : 0xFF0D1117);
             canvas.drawRoundRect(boxRect, 4f, 4f, cardPaint);
-            borderPaint.setColor(isActive ? 0xFF58A6FF : 0xFF484F58);
-            borderPaint.setStrokeWidth(1.5f);
-            canvas.drawRoundRect(boxRect, 4f, 4f, borderPaint);
+
+            if (isRowFocused && focusColumn == COL_CHECKBOX) {
+                // Bright Gold indicator and focus outline
+                borderPaint.setColor(0xFFFFD700);
+                borderPaint.setStrokeWidth(2.5f);
+                canvas.drawRoundRect(boxRect, 4f, 4f, borderPaint);
+
+                textPaint.setColor(0xFFFFD700);
+                textPaint.setTextSize(15f);
+                canvas.drawText("▸", x + 18f, rowY + 25f, textPaint);
+            } else {
+                borderPaint.setColor(isActive ? 0xFF58A6FF : 0xFF484F58);
+                borderPaint.setStrokeWidth(1.5f);
+                canvas.drawRoundRect(boxRect, 4f, 4f, borderPaint);
+            }
 
             if (isActive) {
                 textPaint.setColor(0xFFFFFFFF);
                 textPaint.setTextSize(14f);
                 textPaint.setFakeBoldText(true);
-                canvas.drawText("✓", x + 41f, rowY + 26f, textPaint);
+                canvas.drawText("✓", x + 41f, rowY + 25f, textPaint);
             }
 
-            // Title & Subtitle
             boldTextPaint.setColor(isActive ? 0xFFFFFFFF : 0xFFC9D1D9);
             boldTextPaint.setTextSize(14f);
-            canvas.drawText(type.displayName, x + 70f, rowY + 21f, boldTextPaint);
+            canvas.drawText(type.displayName, x + 70f, rowY + 20f, boldTextPaint);
 
             subtitlePaint.setColor(0xFF8B949E);
             subtitlePaint.setTextSize(11f);
-            canvas.drawText(type.subtitle, x + 70f, rowY + 35f, subtitlePaint);
+            canvas.drawText(type.subtitle, x + 70f, rowY + 34f, subtitlePaint);
 
-            // Color Pill
-            pillRect.set(x + w - 210f, rowY + 9f, x + w - 85f, rowY + 31f);
-            cardPaint.setColor(0xFF21262D);
+            // --- COLUMN 1: Color Pill [ ● Color ] ---
+            pillRect.set(x + w - 215f, rowY + 9f, x + w - 85f, rowY + 31f);
+            boolean isColorColFocused = (isRowFocused && focusColumn == COL_COLOR);
+            cardPaint.setColor(isColorColFocused ? 0xFF2D333B : 0xFF21262D);
             canvas.drawRoundRect(pillRect, 11f, 11f, cardPaint);
-            borderPaint.setColor(0xFF30363D);
-            borderPaint.setStrokeWidth(1f);
-            canvas.drawRoundRect(pillRect, 11f, 11f, borderPaint);
+
+            if (isColorColFocused) {
+                borderPaint.setColor(0xFFFFD700); // Bright Gold focus ring
+                borderPaint.setStrokeWidth(2.5f);
+                canvas.drawRoundRect(pillRect, 11f, 11f, borderPaint);
+
+                textPaint.setColor(0xFFFFD700);
+                textPaint.setTextSize(13f);
+                canvas.drawText("◀", x + w - 228f, rowY + 24f, textPaint);
+                canvas.drawText("▶", x + w - 81f, rowY + 24f, textPaint);
+            } else {
+                borderPaint.setColor(0xFF30363D);
+                borderPaint.setStrokeWidth(1f);
+                canvas.drawRoundRect(pillRect, 11f, 11f, borderPaint);
+            }
 
             colorPillPaint.setColor(resolvedColor);
-            canvas.drawCircle(x + w - 196f, rowY + 20f, 5.5f, colorPillPaint);
+            canvas.drawCircle(x + w - 200f, rowY + 20f, 5.5f, colorPillPaint);
 
-            textPaint.setColor(0xFFE6EDF3);
+            textPaint.setColor(isColorColFocused ? 0xFFFFFFFF : 0xFFE6EDF3);
             textPaint.setTextSize(11f);
-            textPaint.setFakeBoldText(false);
-            canvas.drawText(colorName, x + w - 184f, rowY + 24f, textPaint);
+            textPaint.setFakeBoldText(isColorColFocused);
+            canvas.drawText(colorName, x + w - 188f, rowY + 24f, textPaint);
 
-            // Star
+            // --- COLUMN 2: Star [★] or [☆] ---
+            starBox.set(x + w - 65f, rowY + 8f, x + w - 30f, rowY + 32f);
+            boolean isStarColFocused = (isRowFocused && focusColumn == COL_STAR);
+
+            if (isStarColFocused) {
+                cardPaint.setColor(0xFF2D333B);
+                canvas.drawRoundRect(starBox, 6f, 6f, cardPaint);
+                borderPaint.setColor(0xFFFFD700); // Bright Gold focus ring
+                borderPaint.setStrokeWidth(2.5f);
+                canvas.drawRoundRect(starBox, 6f, 6f, borderPaint);
+            }
+
             textPaint.setTextSize(18f);
-            textPaint.setColor(isFav ? 0xFFFFD700 : 0xFF484F58);
-            canvas.drawText(isFav ? "★" : "☆", x + w - 55f, rowY + 27f, textPaint);
+            textPaint.setColor(isFav ? 0xFFFFD700 : (isStarColFocused ? 0xFFC9D1D9 : 0xFF484F58));
+            canvas.drawText(isFav ? "★" : "☆", x + w - 53f, rowY + 26f, textPaint);
         }
     }
 
     private void drawFooter(Canvas canvas, float x, float y, float w) {
         borderPaint.setColor(0xFF30363D);
         borderPaint.setStrokeWidth(1f);
-        canvas.drawLine(x, y - 6f, x + w, y - 6f, borderPaint);
+        canvas.drawLine(x, y - 4f, x + w, y - 4f, borderPaint);
 
-        textPaint.setColor(0xFF58A6FF);
-        canvas.drawText("[ENTER]", x + 16f, y + 14f, textPaint);
-        subtitlePaint.setColor(0xFF8B949E);
-        canvas.drawText("Toggle  ", x + 62f, y + 14f, subtitlePaint);
-
-        textPaint.setColor(0xFF58A6FF);
-        canvas.drawText("[C2]", x + 112f, y + 14f, textPaint);
-        canvas.drawText("Kleur  ", x + 138f, y + 14f, subtitlePaint);
-
-        textPaint.setColor(0xFF58A6FF);
-        canvas.drawText("[C1]", x + 180f, y + 14f, textPaint);
-        canvas.drawText("Favoriet  ", x + 206f, y + 14f, subtitlePaint);
-
-        textPaint.setColor(0xFF58A6FF);
-        canvas.drawText("[MENU]", x + 262f, y + 14f, textPaint);
-        canvas.drawText("Verberg  ", x + 305f, y + 14f, subtitlePaint);
-
-        textPaint.setColor(0xFFF85149); // Red highlight for exit
-        canvas.drawText("[BACK]", x + 360f, y + 14f, textPaint);
+        // Line 1: D-Pad & Control navigation
+        textPaint.setTextSize(12f);
+        textPaint.setColor(0xFFFFD700);
+        canvas.drawText("[◀/▶]", x + 12f, y + 13f, textPaint);
         subtitlePaint.setColor(0xFFE6EDF3);
-        canvas.drawText("Sluit Menu / Afsluiten", x + 402f, y + 14f, subtitlePaint);
+        canvas.drawText("Veld/Tab", x + 44f, y + 13f, subtitlePaint);
+
+        textPaint.setColor(0xFFFFD700);
+        canvas.drawText("[ENTER]", x + 104f, y + 13f, textPaint);
+        subtitlePaint.setColor(0xFFE6EDF3);
+        canvas.drawText("Wijzig/Toggle", x + 152f, y + 13f, subtitlePaint);
+
+        textPaint.setColor(0xFF58A6FF);
+        canvas.drawText("[▲/▼]", x + 242f, y + 13f, textPaint);
+        subtitlePaint.setColor(0xFF8B949E);
+        canvas.drawText("Rij/Tabs", x + 272f, y + 13f, subtitlePaint);
+
+        textPaint.setColor(0xFF58A6FF);
+        canvas.drawText("[Wiel]", x + 330f, y + 13f, textPaint);
+        subtitlePaint.setColor(0xFF8B949E);
+        canvas.drawText("Scroll/Kleur", x + 368f, y + 13f, subtitlePaint);
+
+        // Line 2: Camera shortcut buttons
+        textPaint.setColor(0xFF58A6FF);
+        canvas.drawText("[C1]", x + 12f, y + 29f, textPaint);
+        subtitlePaint.setColor(0xFF8B949E);
+        canvas.drawText("Favoriet", x + 36f, y + 29f, subtitlePaint);
+
+        textPaint.setColor(0xFF58A6FF);
+        canvas.drawText("[C2]", x + 96f, y + 29f, textPaint);
+        subtitlePaint.setColor(0xFF8B949E);
+        canvas.drawText("Kleur", x + 122f, y + 29f, subtitlePaint);
+
+        textPaint.setColor(0xFF58A6FF);
+        canvas.drawText("[MENU]", x + 168f, y + 29f, textPaint);
+        subtitlePaint.setColor(0xFF8B949E);
+        canvas.drawText("Verberg", x + 212f, y + 29f, subtitlePaint);
+
+        textPaint.setColor(0xFFF85149);
+        canvas.drawText("[BACK]", x + 272f, y + 29f, textPaint);
+        subtitlePaint.setColor(0xFFE6EDF3);
+        canvas.drawText("Sluit Menu / Afsluiten", x + 316f, y + 29f, subtitlePaint);
     }
 
-    // === 100% SONY A6300 HARDWARE KEY DISPATCH ===
+    private void switchCategory(int direction) {
+        OverlayType.Category[] categories = OverlayType.Category.values();
+        int nextIdx = (currentCategory.ordinal() + direction + categories.length) % categories.length;
+        currentCategory = categories[nextIdx];
+        selectedRowIndex = 0;
+        scrollOffset = 0;
+        focusColumn = COL_CHECKBOX;
+        List<OverlayType> items = stateManager.getItemsForCategory(currentCategory);
+        if (items.isEmpty()) {
+            focusArea = FocusArea.TABS;
+        }
+        invalidate();
+    }
+
+    private void toggleCurrentFavorite() {
+        List<OverlayType> items = stateManager.getItemsForCategory(currentCategory);
+        if (!items.isEmpty() && selectedRowIndex < items.size()) {
+            OverlayType item = items.get(selectedRowIndex);
+            stateManager.toggleFavorite(item);
+            List<OverlayType> updated = stateManager.getItemsForCategory(currentCategory);
+            if (selectedRowIndex >= updated.size()) {
+                selectedRowIndex = Math.max(0, updated.size() - 1);
+            }
+            if (updated.isEmpty()) {
+                focusArea = FocusArea.TABS;
+            }
+            invalidate();
+        }
+    }
+
+    private void cycleCurrentColor(boolean forward) {
+        List<OverlayType> items = stateManager.getItemsForCategory(currentCategory);
+        if (!items.isEmpty() && selectedRowIndex < items.size()) {
+            OverlayType item = items.get(selectedRowIndex);
+            if (item == OverlayType.GRID_GOLDEN_SPIRAL) {
+                stateManager.cycleSpiralCorner();
+            } else {
+                if (forward) {
+                    stateManager.cycleColor(item);
+                } else {
+                    stateManager.cycleColorReverse(item);
+                }
+            }
+            invalidate();
+        }
+    }
+
+    private void moveRow(int delta) {
+        List<OverlayType> items = stateManager.getItemsForCategory(currentCategory);
+        if (!items.isEmpty()) {
+            selectedRowIndex = Math.max(0, Math.min(items.size() - 1, selectedRowIndex + delta));
+            invalidate();
+        }
+    }
+
+    // === SONY A6300 HARDWARE KEY & ROTARY DIAL DISPATCH ===
     public boolean handleKeyDown(int keyCode, KeyEvent event) {
-        if (keyCode == KeyEvent.KEYCODE_MENU) {
+        int scanCode = (event != null) ? event.getScanCode() : 0;
+
+        // 1. Menu Toggle (Sony MENU key is scanCode 514 or KEYCODE_MENU)
+        if (keyCode == KeyEvent.KEYCODE_MENU || scanCode == 514) {
             toggleMenuVisible();
             return true;
         }
@@ -278,81 +419,146 @@ public class HUDMenuOverlayView extends View implements OverlayStateManager.OnSt
             return false;
         }
 
+        // 2. Sony Top Dial rotation (scanCode 525 CW / 526 CCW): Switches category tabs
+        if (scanCode == 525) {
+            switchCategory(1);
+            return true;
+        }
+        if (scanCode == 526) {
+            switchCategory(-1);
+            return true;
+        }
+
+        // 3. Sony Control Wheel rotary turn (scanCode 522 CW / 523 CCW):
+        if (scanCode == 522) { // Clockwise
+            if (focusArea == FocusArea.TABS) {
+                switchCategory(1);
+            } else {
+                if (focusColumn == COL_COLOR) {
+                    cycleCurrentColor(true);
+                } else {
+                    moveRow(1);
+                }
+            }
+            return true;
+        }
+        if (scanCode == 523) { // Counter-Clockwise
+            if (focusArea == FocusArea.TABS) {
+                switchCategory(-1);
+            } else {
+                if (focusColumn == COL_COLOR) {
+                    cycleCurrentColor(false);
+                } else {
+                    moveRow(-1);
+                }
+            }
+            return true;
+        }
+
+        // 4. Sony Hardware Button Shortcuts:
+        // C1 button (scanCode 524 or KEYCODE_1): Toggle Favorite
+        if (scanCode == 524 || keyCode == KeyEvent.KEYCODE_1) {
+            toggleCurrentFavorite();
+            return true;
+        }
+
+        // C2 / Trash button (scanCode 595, 513, KEYCODE_CLEAR, KEYCODE_DEL, KEYCODE_2): Cycle Color
+        if (scanCode == 595 || scanCode == 513 || keyCode == KeyEvent.KEYCODE_CLEAR || keyCode == KeyEvent.KEYCODE_DEL || keyCode == KeyEvent.KEYCODE_2) {
+            cycleCurrentColor(true);
+            return true;
+        }
+
+        // Fn button (scanCode 520 or KEYCODE_3): Cycle Stroke Weight
+        if (scanCode == 520 || keyCode == KeyEvent.KEYCODE_3) {
+            stateManager.cycleStrokeWeight();
+            invalidate();
+            return true;
+        }
+
+        // 5. Standard Sony D-Pad Navigation:
         List<OverlayType> items = stateManager.getItemsForCategory(currentCategory);
 
         switch (keyCode) {
             case KeyEvent.KEYCODE_DPAD_UP:
-                if (!items.isEmpty()) {
-                    selectedRowIndex = (selectedRowIndex - 1 + items.size()) % items.size();
-                    invalidate();
-                }
-                return true;
-
-            case KeyEvent.KEYCODE_DPAD_DOWN:
-                if (!items.isEmpty()) {
-                    selectedRowIndex = (selectedRowIndex + 1) % items.size();
-                    invalidate();
-                }
-                return true;
-
-            case KeyEvent.KEYCODE_DPAD_LEFT: {
-                OverlayType.Category[] categories = OverlayType.Category.values();
-                int nextIdx = (currentCategory.ordinal() - 1 + categories.length) % categories.length;
-                currentCategory = categories[nextIdx];
-                selectedRowIndex = 0;
-                scrollOffset = 0;
-                invalidate();
-                return true;
-            }
-
-            case KeyEvent.KEYCODE_DPAD_RIGHT: {
-                OverlayType.Category[] categories = OverlayType.Category.values();
-                int nextIdx = (currentCategory.ordinal() + 1) % categories.length;
-                currentCategory = categories[nextIdx];
-                selectedRowIndex = 0;
-                scrollOffset = 0;
-                invalidate();
-                return true;
-            }
-
-            case KeyEvent.KEYCODE_DPAD_CENTER:
-            case KeyEvent.KEYCODE_ENTER:
-                if (!items.isEmpty() && selectedRowIndex < items.size()) {
-                    stateManager.toggleActive(items.get(selectedRowIndex));
-                    invalidate();
-                }
-                return true;
-
-            case KeyEvent.KEYCODE_1: // C1 Custom button: Toggle Favorite
-                if (!items.isEmpty() && selectedRowIndex < items.size()) {
-                    stateManager.toggleFavorite(items.get(selectedRowIndex));
-                    invalidate();
-                }
-                return true;
-
-            case KeyEvent.KEYCODE_2: // C2 Custom button: Cycle Color or Spiral Corner
-                if (!items.isEmpty() && selectedRowIndex < items.size()) {
-                    OverlayType item = items.get(selectedRowIndex);
-                    if (item == OverlayType.GRID_GOLDEN_SPIRAL) {
-                        stateManager.cycleSpiralCorner();
+                if (focusArea == FocusArea.ITEMS) {
+                    if (selectedRowIndex > 0) {
+                        selectedRowIndex--;
                     } else {
-                        stateManager.cycleColor(item);
+                        // Move UP past row 0: focus Category Tabs!
+                        focusArea = FocusArea.TABS;
                     }
                     invalidate();
                 }
                 return true;
 
-            case KeyEvent.KEYCODE_3: // Cycle line stroke weight
-                stateManager.cycleStrokeWeight();
-                invalidate();
+            case KeyEvent.KEYCODE_DPAD_DOWN:
+                if (focusArea == FocusArea.TABS) {
+                    if (!items.isEmpty()) {
+                        focusArea = FocusArea.ITEMS;
+                        selectedRowIndex = 0;
+                        invalidate();
+                    }
+                } else {
+                    if (selectedRowIndex < items.size() - 1) {
+                        selectedRowIndex++;
+                        invalidate();
+                    }
+                }
                 return true;
 
-            case KeyEvent.KEYCODE_DEL:
-            case KeyEvent.KEYCODE_CLEAR: // Sony Trash key
-                stateManager.clearAllActive();
-                invalidate();
+            case KeyEvent.KEYCODE_DPAD_LEFT:
+                if (focusArea == FocusArea.TABS) {
+                    switchCategory(-1);
+                } else {
+                    if (focusColumn > 0) {
+                        // Move between columns: Star (2) -> Color (1) -> Checkbox (0)
+                        focusColumn--;
+                        invalidate();
+                    } else {
+                        // From Checkbox column, move to previous category tab
+                        switchCategory(-1);
+                    }
+                }
                 return true;
 
+            case KeyEvent.KEYCODE_DPAD_RIGHT:
+                if (focusArea == FocusArea.TABS) {
+                    switchCategory(1);
+                } else {
+                    if (focusColumn < 2) {
+                        // Move between columns: Checkbox (0) -> Color (1) -> Star (2)
+                        focusColumn++;
+                        invalidate();
+                    } else {
+                        // From Star column, move to next category tab
+                        switchCategory(1);
+                    }
+                }
+                return true;
+
+            case KeyEvent.KEYCODE_DPAD_CENTER:
+            case KeyEvent.KEYCODE_ENTER:
+                if (focusArea == FocusArea.TABS) {
+                    if (!items.isEmpty()) {
+                        focusArea = FocusArea.ITEMS;
+                        selectedRowIndex = 0;
+                        focusColumn = COL_CHECKBOX;
+                        invalidate();
+                    }
+                } else {
+                    if (!items.isEmpty() && selectedRowIndex < items.size()) {
+                        OverlayType item = items.get(selectedRowIndex);
+                        if (focusColumn == COL_CHECKBOX) {
+                            stateManager.toggleActive(item);
+                        } else if (focusColumn == COL_COLOR) {
+                            cycleCurrentColor(true);
+                        } else if (focusColumn == COL_STAR) {
+                            toggleCurrentFavorite();
+                        }
+                        invalidate();
+                    }
+                }
+                return true;
         }
 
         return false;

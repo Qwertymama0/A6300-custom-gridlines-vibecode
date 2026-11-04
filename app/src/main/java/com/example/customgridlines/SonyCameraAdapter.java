@@ -70,6 +70,81 @@ public class SonyCameraAdapter {
         return false;
     }
 
+    public void autoFocus() {
+        if (standardCamera != null) {
+            try {
+                standardCamera.autoFocus(new Camera.AutoFocusCallback() {
+                    @Override
+                    public void onAutoFocus(boolean success, Camera camera) {
+                        Log.d(TAG, "autoFocus callback result: " + success);
+                    }
+                });
+                Log.d(TAG, "Triggered camera autoFocus()");
+            } catch (Throwable t) {
+                Log.w(TAG, "autoFocus failed: " + t.getMessage());
+            }
+        }
+    }
+
+    public void cancelAutoFocus() {
+        if (standardCamera != null) {
+            try {
+                standardCamera.cancelAutoFocus();
+                Log.d(TAG, "Triggered camera cancelAutoFocus()");
+            } catch (Throwable t) {
+                Log.w(TAG, "cancelAutoFocus failed: " + t.getMessage());
+            }
+        }
+    }
+
+    public void takePicture() {
+        if (standardCamera != null) {
+            try {
+                // ma1co CameraActivity pattern for CameraEx / standard camera:
+                // Passing null callbacks allows Sony hardware BIONZ DSP to handle capture
+                // and write RAW/ARW and JPEG directly to SD card without Dalvik heap pressure.
+                standardCamera.takePicture(null, null, null);
+                Log.i(TAG, "Triggered camera takePicture(null, null, null)");
+            } catch (Throwable t) {
+                Log.w(TAG, "takePicture(null, null, null) failed: " + t.getMessage() + ", trying fallback");
+                try {
+                    standardCamera.takePicture(null, null, new Camera.PictureCallback() {
+                        @Override
+                        public void onPictureTaken(byte[] data, Camera camera) {
+                            try {
+                                if (camera != null) {
+                                    camera.startPreview();
+                                }
+                            } catch (Throwable ignored) {
+                            }
+                        }
+                    });
+                } catch (Throwable t2) {
+                    Log.e(TAG, "Fallback takePicture failed: " + t2.getMessage());
+                }
+            }
+        }
+    }
+
+    public void cancelTakePicture() {
+        if (sonyCameraEx != null) {
+            try {
+                Method cancelMethod = sonyCameraEx.getClass().getMethod("cancelTakePicture");
+                cancelMethod.invoke(sonyCameraEx);
+                Log.d(TAG, "Invoked CameraEx cancelTakePicture()");
+            } catch (Throwable t) {
+                Log.w(TAG, "CameraEx cancelTakePicture failed: " + t.getMessage());
+            }
+        }
+        // Ensure preview resumes cleanly
+        if (standardCamera != null) {
+            try {
+                standardCamera.startPreview();
+            } catch (Throwable ignored) {
+            }
+        }
+    }
+
     public void releaseCamera() {
         if (sonyCameraEx != null) {
             try {

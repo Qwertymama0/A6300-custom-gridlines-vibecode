@@ -52,6 +52,10 @@ public final class ColorPalette {
         return (currentIndex + 1) % PALETTE.length;
     }
 
+    public static int getPrevColorIndex(int currentIndex) {
+        return (currentIndex - 1 + PALETTE.length) % PALETTE.length;
+    }
+
     private ColorPalette() {
     }
 }

@@ -127,6 +127,13 @@ public class OverlayStateManager {
         notifyChanged();
     }
 
+    public synchronized void cycleColorReverse(OverlayType type) {
+        int prevIdx = ColorPalette.getPrevColorIndex(getColorIndex(type));
+        overlayColors.put(type, prevIdx);
+        prefs.edit().putInt(KEY_COLOR_PREFIX + type.id, prevIdx).commit();
+        notifyChanged();
+    }
+
     public synchronized void clearAllActive() {
         activeOverlays.clear();
         SharedPreferences.Editor editor = prefs.edit();

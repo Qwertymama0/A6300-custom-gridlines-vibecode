@@ -39,6 +39,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         // 1. Live camera preview
         surfaceView = new SurfaceView(this);
         surfaceHolder = surfaceView.getHolder();
+        surfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
         surfaceHolder.addCallback(this);
         rootLayout.addView(surfaceView, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
@@ -87,19 +88,48 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         cameraAdapter.releaseCamera();
     }
 
+    // === SONY A6300 HARDWARE FOCUS & SHUTTER DETECTION ===
+    private boolean isFocusKey(int keyCode, KeyEvent event) {
+        int scanCode = (event != null) ? event.getScanCode() : 0;
+        return keyCode == KeyEvent.KEYCODE_FOCUS
+                || scanCode == 516 // S1 half-press
+                || scanCode == 532 // AEL button (often assigned to Back-Button AF)
+                || scanCode == 519 // AF/MF button/switch position
+                || scanCode == 521;
+    }
+
+    private boolean isShutterKey(int keyCode, KeyEvent event) {
+        int scanCode = (event != null) ? event.getScanCode() : 0;
+        return keyCode == KeyEvent.KEYCODE_CAMERA
+                || scanCode == 518; // S2 full shutter press
+    }
+
     // === SONY A6300 HARDWARE KEY DISPATCH ===
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        // Native shooting pass-through: NEVER intercept focus or shutter keys
-        if (keyCode == KeyEvent.KEYCODE_FOCUS || keyCode == KeyEvent.KEYCODE_CAMERA) {
-            return super.onKeyDown(keyCode, event);
+        // 1. Shutter half-press or Back-Button AF: Engage hardware autofocus
+        if (isFocusKey(keyCode, event)) {
+            if (hudOverlay != null && hudOverlay.isMenuVisible()) {
+                hudOverlay.setMenuVisible(false);
+            }
+            cameraAdapter.autoFocus();
+            return true;
         }
 
-        // Dedicated BACK key handling for clear, safe app exit
+        // 2. Shutter full-press: Engage hardware photo capture
+        if (isShutterKey(keyCode, event)) {
+            if (hudOverlay != null && hudOverlay.isMenuVisible()) {
+                hudOverlay.setMenuVisible(false);
+            }
+            cameraAdapter.takePicture();
+            return true;
+        }
+
+        // 3. Dedicated BACK key handling for clear, safe app exit
         if (keyCode == KeyEvent.KEYCODE_BACK) {
             long now = System.currentTimeMillis();
 
-            // 1. If HUD menu is currently open, close menu and prompt to exit
+            // If HUD menu is open, close menu and prompt
             if (hudOverlay != null && hudOverlay.isMenuVisible()) {
                 hudOverlay.setMenuVisible(false);
                 lastBackPressTime = now;
@@ -109,7 +139,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 return true;
             }
 
-            // 2. In live view mode, double-press BACK within 2.5s cleanly exits app
+            // In live view mode, double-press BACK within 2.5s cleanly exits app
             if (now - lastBackPressTime < BACK_PRESS_INTERVAL) {
                 finish();
                 return true;
@@ -122,11 +152,28 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             }
         }
 
-        // Delegate navigation and toggling strictly to HUD menu
+        // 4. Delegate HUD menu navigation, column selection, colors, and stars
         if (hudOverlay != null && hudOverlay.handleKeyDown(keyCode, event)) {
             return true;
         }
 
         return super.onKeyDown(keyCode, event);
+    }
+
+    @Override
+    public boolean onKeyUp(int keyCode, KeyEvent event) {
+        // 1. Releasing focus half-press / Back-Button AF
+        if (isFocusKey(keyCode, event)) {
+            cameraAdapter.cancelAutoFocus();
+            return true;
+        }
+
+        // 2. Releasing shutter full-press
+        if (isShutterKey(keyCode, event)) {
+            cameraAdapter.cancelTakePicture();
+            return true;
+        }
+
+        return super.onKeyUp(keyCode, event);
     }
 }
